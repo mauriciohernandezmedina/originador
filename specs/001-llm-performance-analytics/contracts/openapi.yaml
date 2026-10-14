@@ -1,0 +1,602 @@
+openapi: 3.0.3
+info:
+  title: LLM Performance Analytics API
+  description: REST API para la ingesta de telemetría y análisis de rendimiento de interacciones y chats de LLM.
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: Endpoint relativo de producción (frontend embebido)
+  - url: http://localhost:8080/api/v1
+    description: Servidor de desarrollo local
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /traces:
+    post:
+      summary: Ingestar una traza individual de interacción LLM
+      operationId: ingestTrace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TraceIngestRequest'
+      responses:
+        '201':
+          description: Traza registrada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraceResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    get:
+      summary: Consultar trazas con filtros y paginación
+      operationId: listTraces
+      parameters:
+        - name: iterationId
+          in: query
+          schema:
+            type: string
+        - name: modelName
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [SUCCESS, ERROR, TIMEOUT, CANCELLED]
+        - name: minLatency
+          in: query
+          schema:
+            type: integer
+        - name: maxLatency
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Lista paginada de trazas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTracesResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /traces/batch:
+    post:
+      summary: Ingestar un lote de trazas de interacción en masa (máx. 500)
+      operationId: ingestBatchTraces
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/TraceIngestRequest'
+      responses:
+        '201':
+          description: Lote procesado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchIngestResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /traces/{id}:
+    get:
+      summary: Obtener el detalle completo de una traza (incluye herramientas y waterfall)
+      operationId: getTraceById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detalle de la traza
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraceDetailResponse'
+        '404':
+          description: Traza no encontrada
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /iterations:
+    get:
+      summary: Listar todas las iteraciones indexadas con métricas resumidas
+      operationId: listIterations
+      responses:
+        '200':
+          description: Listado de iteraciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IterationSummary'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /iterations/{id}:
+    get:
+      summary: Obtener resumen estadístico de una iteración
+      operationId: getIterationSummary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceSummaryDto'
+        '404':
+          description: Iteración no encontrada
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    put:
+      summary: Actualizar metadata de una iteración (nombre e hipótesis)
+      operationId: updateIteration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateIterationRequest'
+      responses:
+        '200':
+          description: Iteración actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IterationSummary'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /iterations/compare:
+    get:
+      summary: Comparar métricas de rendimiento lado a lado entre dos iteraciones
+      operationId: compareIterations
+      parameters:
+        - name: baseId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: targetId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Análisis comparativo y cálculo de deltas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IterationComparisonDto'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /metrics/summary:
+    get:
+      summary: Obtener resumen global de rendimiento del tablero
+      operationId: getGlobalSummary
+      parameters:
+        - name: timeRange
+          in: query
+          schema:
+            type: string
+            enum: [1h, 24h, 7d, 30d, all]
+            default: all
+      responses:
+        '200':
+          description: Resumen general de KPIs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceSummaryDto'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /sample-data/seed:
+    post:
+      summary: Poblar la base de datos con escenarios de prueba y datos de muestra
+      operationId: seedSampleData
+      responses:
+        '200':
+          description: Datos de muestra inicializados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  seededIterations:
+                    type: integer
+                  seededTraces:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /sample-data/reset:
+    delete:
+      summary: Restablecer o limpiar datos de demostración
+      operationId: resetSampleData
+      responses:
+        '200':
+          description: Base de datos limpia
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Clave de acceso estática a la API
+
+  responses:
+    UnauthorizedError:
+      description: Clave de API faltante o no válida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequestError:
+      description: Parámetros o cuerpo de solicitud inválidos
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    TraceIngestRequest:
+      type: object
+      required:
+        - iterationId
+        - modelName
+        - promptText
+        - inputTokens
+        - outputTokens
+        - startedAt
+        - endedAt
+      properties:
+        clientTraceId:
+          type: string
+          example: trace-uuid-1234
+        iterationId:
+          type: string
+          example: v2-prompt-optimized
+        modelName:
+          type: string
+          example: gpt-4o
+        promptText:
+          type: string
+          example: "¿Cuál es la capital de Francia?"
+        responseText:
+          type: string
+          example: "La capital de Francia es París."
+        inputTokens:
+          type: integer
+          minimum: 0
+          example: 25
+        outputTokens:
+          type: integer
+          minimum: 0
+          example: 40
+        startedAt:
+          type: string
+          format: date-time
+          example: "2026-10-14T10:00:00.000Z"
+        endedAt:
+          type: string
+          format: date-time
+          example: "2026-10-14T10:00:01.200Z"
+        status:
+          type: string
+          enum: [SUCCESS, ERROR, TIMEOUT, CANCELLED]
+          default: SUCCESS
+        errorMessage:
+          type: string
+          nullable: true
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolInvocationDto'
+
+    ToolInvocationDto:
+      type: object
+      required:
+        - toolName
+        - startedAt
+        - endedAt
+      properties:
+        toolName:
+          type: string
+          example: web_search
+        inputArguments:
+          type: string
+          example: "{\"q\": \"capital france\"}"
+        outputResult:
+          type: string
+          example: "{\"result\": \"Paris\"}"
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [SUCCESS, ERROR]
+          default: SUCCESS
+        errorMessage:
+          type: string
+          nullable: true
+
+    TraceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        iterationId:
+          type: string
+        modelName:
+          type: string
+        latencyMs:
+          type: integer
+        tokensPerSecond:
+          type: number
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    TraceDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/TraceResponse'
+        - type: object
+          properties:
+            promptText:
+              type: string
+            responseText:
+              type: string
+            inputTokens:
+              type: integer
+            outputTokens:
+              type: integer
+            totalTokens:
+              type: integer
+            startedAt:
+              type: string
+              format: date-time
+            endedAt:
+              type: string
+              format: date-time
+            errorMessage:
+              type: string
+              nullable: true
+            tools:
+              type: array
+              items:
+                $ref: '#/components/schemas/ToolInvocationDetailDto'
+
+    ToolInvocationDetailDto:
+      type: object
+      properties:
+        id:
+          type: string
+        toolName:
+          type: string
+        inputArguments:
+          type: string
+        outputResult:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        durationMs:
+          type: integer
+        status:
+          type: string
+        errorMessage:
+          type: string
+          nullable: true
+
+    BatchIngestResponse:
+      type: object
+      properties:
+        receivedCount:
+          type: integer
+        savedCount:
+          type: integer
+        errorsCount:
+          type: integer
+
+    IterationSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        totalInteractions:
+          type: integer
+        avgLatencyMs:
+          type: number
+        avgTokensPerSecond:
+          type: number
+        successRate:
+          type: number
+        firstSeenAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+
+    UpdateIterationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    PerformanceSummaryDto:
+      type: object
+      properties:
+        iterationId:
+          type: string
+          nullable: true
+        totalInteractions:
+          type: integer
+        successCount:
+          type: integer
+        errorCount:
+          type: integer
+        errorRatePercentage:
+          type: number
+        latencyMetrics:
+          type: object
+          properties:
+            minMs:
+              type: integer
+            avgMs:
+              type: number
+            p50Ms:
+              type: integer
+            p90Ms:
+              type: integer
+            p95Ms:
+              type: integer
+            maxMs:
+              type: integer
+        tokenMetrics:
+          type: object
+          properties:
+            totalInputTokens:
+              type: integer
+            totalOutputTokens:
+              type: integer
+            totalTokens:
+              type: integer
+            avgTokensPerInteraction:
+              type: number
+            avgTokensPerSecond:
+              type: number
+        toolUsage:
+          type: array
+          items:
+            type: object
+            properties:
+              toolName:
+                type: string
+              callCount:
+                type: integer
+              avgDurationMs:
+                type: number
+              totalDurationMs:
+                type: integer
+
+    IterationComparisonDto:
+      type: object
+      properties:
+        baseIteration:
+          type: object
+        targetIteration:
+          type: object
+        deltas:
+          type: object
+          properties:
+            latencyDeltaPercentage:
+              type: number
+            tokensDeltaPercentage:
+              type: number
+            speedupPercentage:
+              type: number
+            errorRateDelta:
+              type: number
+
+    PaginatedTracesResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TraceResponse'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        fieldErrors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
