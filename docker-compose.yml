@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: originador-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-llm_analytics}
+      POSTGRES_USER: ${POSTGRES_USER:-originador_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-originador_secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: originador-app
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/llm_analytics}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-originador_user}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-originador_secret}
+      APP_API_KEY: ${APP_API_KEY:-originador-llm-secret-key-2026}
+      SERVER_PORT: 8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+    name: originador_postgres_data
+
+networks:
+  app-network:
+    name: originador_network
