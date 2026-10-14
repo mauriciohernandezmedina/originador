@@ -5,11 +5,18 @@ import apiClient from './services/apiClient';
 import DashboardPage from './pages/DashboardPage';
 import IterationsPage from './pages/IterationsPage';
 import TracesPage from './pages/TracesPage';
+import { TraceFilters } from './components/traces/TraceTable';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
+  const [traceFilters, setTraceFilters] = useState<TraceFilters | undefined>(undefined);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [feedbackMessage, setFeedbackMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  const handleNavigateToTraces = (filters: TraceFilters) => {
+    setTraceFilters(filters);
+    setActiveTab('traces');
+  };
 
   useEffect(() => {
     const handleUnauthorized = () => {
@@ -92,11 +99,11 @@ export const App: React.FC = () => {
       )}
 
       <main style={{ flex: 1, padding: '2rem', maxWidth: '1400px', width: '100%', margin: '0 auto' }}>
-        {activeTab === 'dashboard' && <DashboardPage />}
+        {activeTab === 'dashboard' && <DashboardPage onNavigateToTraces={handleNavigateToTraces} />}
 
         {activeTab === 'iterations' && <IterationsPage />}
 
-        {activeTab === 'traces' && <TracesPage />}
+        {activeTab === 'traces' && <TracesPage initialFilters={traceFilters} />}
       </main>
     </div>
   );

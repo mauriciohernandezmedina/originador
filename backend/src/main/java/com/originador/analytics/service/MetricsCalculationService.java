@@ -2,8 +2,10 @@ package com.originador.analytics.service;
 
 import com.originador.analytics.dto.LatencyMetrics;
 import com.originador.analytics.dto.PerformanceSummaryDto;
+import com.originador.analytics.dto.TimeSeriesPointDto;
 import com.originador.analytics.dto.TokenMetrics;
 import com.originador.analytics.dto.ToolUsageStat;
+import com.originador.analytics.model.InteractionTrace;
 import com.originador.analytics.repository.InteractionTraceRepository;
 import com.originador.analytics.repository.ToolInvocationRepository;
 import lombok.RequiredArgsConstructor;
@@ -71,6 +73,29 @@ public class MetricsCalculationService {
             }
         }
 
+        List<InteractionTrace> timeSeriesTraces;
+        if (iterationId != null && !iterationId.isBlank() && since != null) {
+            timeSeriesTraces = traceRepository.findTracesForTimeSeriesByIterationAndSince(iterationId, since);
+        } else if (since != null) {
+            timeSeriesTraces = traceRepository.findTracesForTimeSeriesSince(since);
+        } else {
+            timeSeriesTraces = traceRepository.findTracesForTimeSeries(iterationId);
+        }
+        List<TimeSeriesPointDto> timeSeriesPoints = new ArrayList<>();
+        if (timeSeriesTraces != null) {
+            for (InteractionTrace t : timeSeriesTraces) {
+                timeSeriesPoints.add(TimeSeriesPointDto.builder()
+                        .traceId(t.getId())
+                        .timestamp(t.getStartedAt() != null ? t.getStartedAt() : t.getCreatedAt())
+                        .latencyMs(t.getLatencyMs())
+                        .tokensPerSecond(t.getTokensPerSecond())
+                        .totalTokens(t.getTotalTokens())
+                        .modelName(t.getModelName())
+                        .status(t.getStatus())
+                        .build());
+            }
+        }
+
         return PerformanceSummaryDto.builder()
                 .iterationId(iterationId)
                 .totalInteractions(total)
@@ -80,6 +105,7 @@ public class MetricsCalculationService {
                 .latencyMetrics(latencyMetrics)
                 .tokenMetrics(tokenMetrics)
                 .toolUsage(toolUsageList)
+                .timeSeries(timeSeriesPoints)
                 .build();
     }
 

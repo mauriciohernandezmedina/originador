@@ -116,6 +116,28 @@ public class TraceIngestionIntegrationTest {
     }
 
     @Test
+    @DisplayName("Reject invalid request where endedAt is before startedAt (400)")
+    void testInvertedDatesReturns400() throws Exception {
+        Instant now = Instant.now();
+        TraceIngestRequest requestWithInvertedDates = TraceIngestRequest.builder()
+                .iterationId("test-iter")
+                .modelName("gpt-4o")
+                .promptText("Prompt de prueba")
+                .inputTokens(10)
+                .outputTokens(20)
+                .startedAt(now)
+                .endedAt(now.minusSeconds(30)) // endedAt is before startedAt
+                .build();
+
+        mockMvc.perform(post("/api/v1/traces")
+                        .header("X-API-Key", API_KEY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestWithInvertedDates)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
     @DisplayName("Process batch ingestion successfully (201)")
     void testBatchIngestionReturns201() throws Exception {
         TraceIngestRequest request1 = TraceIngestRequest.builder()

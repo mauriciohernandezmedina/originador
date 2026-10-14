@@ -1,6 +1,7 @@
 package com.originador.analytics.dto;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -52,4 +53,12 @@ public class TraceIngestRequest {
     @Valid
     @Builder.Default
     private List<ToolInvocationDto> tools = new ArrayList<>();
+
+    @AssertTrue(message = "endedAt debe ser igual o posterior a startedAt")
+    public boolean isChronologicalOrderValid() {
+        if (startedAt == null || endedAt == null) {
+            return true;
+        }
+        return !endedAt.isBefore(startedAt);
+    }
 }

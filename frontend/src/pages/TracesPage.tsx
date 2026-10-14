@@ -6,7 +6,11 @@ import TraceTable, { TraceFilters } from '../components/traces/TraceTable';
 import TraceDetailModal from '../components/traces/TraceDetailModal';
 import ExportTracesButton from '../components/traces/ExportTracesButton';
 
-export const TracesPage: React.FC = () => {
+interface TracesPageProps {
+  initialFilters?: TraceFilters;
+}
+
+export const TracesPage: React.FC<TracesPageProps> = ({ initialFilters }) => {
   const [traces, setTraces] = useState<TraceResponse[]>([]);
   const [totalElements, setTotalElements] = useState<number>(0);
   const [totalPages, setTotalPages] = useState<number>(0);
@@ -16,7 +20,14 @@ export const TracesPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [availableIterations, setAvailableIterations] = useState<string[]>([]);
-  const [filters, setFilters] = useState<TraceFilters>({});
+  const [filters, setFilters] = useState<TraceFilters>(initialFilters || {});
+
+  useEffect(() => {
+    if (initialFilters) {
+      setFilters(initialFilters);
+      setCurrentPage(0);
+    }
+  }, [initialFilters]);
 
   // Modal State
   const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
@@ -46,6 +57,9 @@ export const TracesPage: React.FC = () => {
         status: filters.status,
         minLatency: filters.minLatency,
         maxLatency: filters.maxLatency,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        hasTools: filters.hasTools,
         page: currentPage,
         size: pageSize,
       });

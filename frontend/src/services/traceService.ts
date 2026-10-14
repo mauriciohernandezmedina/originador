@@ -33,6 +33,9 @@ export const traceService = {
     status?: string;
     minLatency?: number;
     maxLatency?: number;
+    startDate?: string;
+    endDate?: string;
+    hasTools?: boolean;
     page?: number;
     size?: number;
   }): Promise<PaginatedTracesResponse> {

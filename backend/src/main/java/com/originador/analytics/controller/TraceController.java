@@ -8,10 +8,12 @@ import com.originador.analytics.dto.TraceResponse;
 import com.originador.analytics.service.TraceIngestionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -40,10 +42,13 @@ public class TraceController {
             @RequestParam(value = "status", required = false) String status,
             @RequestParam(value = "minLatency", required = false) Long minLatency,
             @RequestParam(value = "maxLatency", required = false) Long maxLatency,
+            @RequestParam(value = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
+            @RequestParam(value = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
+            @RequestParam(value = "hasTools", required = false) Boolean hasTools,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size) {
         PaginatedTracesResponse response = traceIngestionService.getTraces(
-                iterationId, modelName, status, minLatency, maxLatency, page, size);
+                iterationId, modelName, status, minLatency, maxLatency, startDate, endDate, hasTools, page, size);
         return ResponseEntity.ok(response);
     }
 

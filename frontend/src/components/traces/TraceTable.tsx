@@ -7,6 +7,9 @@ export interface TraceFilters {
   status?: string;
   minLatency?: number;
   maxLatency?: number;
+  startDate?: string;
+  endDate?: string;
+  hasTools?: boolean;
 }
 
 interface TraceTableProps {
@@ -38,7 +41,7 @@ export const TraceTable: React.FC<TraceTableProps> = ({
   onSelectTrace,
   availableIterations = [],
 }) => {
-  const handleInputChange = (field: keyof TraceFilters, value: string | number | undefined) => {
+  const handleInputChange = (field: keyof TraceFilters, value: string | number | boolean | undefined) => {
     onFilterChange({
       ...filters,
       [field]: value === '' ? undefined : value,
@@ -52,6 +55,9 @@ export const TraceTable: React.FC<TraceTableProps> = ({
       status: undefined,
       minLatency: undefined,
       maxLatency: undefined,
+      startDate: undefined,
+      endDate: undefined,
+      hasTools: undefined,
     });
   };
 
@@ -231,6 +237,79 @@ export const TraceTable: React.FC<TraceTableProps> = ({
                 borderRadius: '6px',
                 color: 'var(--text-primary)',
                 fontSize: '0.85rem',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Tools Presence Filter */}
+        <div style={{ flex: '1 1 140px', minWidth: '130px' }}>
+          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+            Herramientas
+          </label>
+          <select
+            value={filters.hasTools === undefined ? '' : filters.hasTools ? 'true' : 'false'}
+            onChange={(e) => {
+              const val = e.target.value;
+              handleInputChange('hasTools', val === '' ? undefined : val === 'true');
+            }}
+            style={{
+              width: '100%',
+              padding: '0.5rem 0.6rem',
+              backgroundColor: 'var(--bg-primary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              color: 'var(--text-primary)',
+              fontSize: '0.85rem',
+            }}
+          >
+            <option value="">Todas</option>
+            <option value="true">Con herramientas</option>
+            <option value="false">Sin herramientas (Chat puro)</option>
+          </select>
+        </div>
+
+        {/* Date Range Filter */}
+        <div style={{ flex: '1 1 240px', minWidth: '220px' }}>
+          <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+            Rango de Fechas (Desde / Hasta)
+          </label>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <input
+              type="date"
+              value={filters.startDate ? filters.startDate.slice(0, 10) : ''}
+              onChange={(e) => {
+                const val = e.target.value ? new Date(e.target.value).toISOString() : undefined;
+                handleInputChange('startDate', val);
+              }}
+              style={{
+                width: '50%',
+                padding: '0.45rem 0.4rem',
+                backgroundColor: 'var(--bg-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '6px',
+                color: 'var(--text-primary)',
+                fontSize: '0.8rem',
+                boxSizing: 'border-box',
+              }}
+            />
+            <span style={{ color: 'var(--text-secondary)' }}>-</span>
+            <input
+              type="date"
+              value={filters.endDate ? filters.endDate.slice(0, 10) : ''}
+              onChange={(e) => {
+                const val = e.target.value ? new Date(`${e.target.value}T23:59:59.999Z`).toISOString() : undefined;
+                handleInputChange('endDate', val);
+              }}
+              style={{
+                width: '50%',
+                padding: '0.45rem 0.4rem',
+                backgroundColor: 'var(--bg-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '6px',
+                color: 'var(--text-primary)',
+                fontSize: '0.8rem',
                 boxSizing: 'border-box',
               }}
             />

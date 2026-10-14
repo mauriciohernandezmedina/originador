@@ -7,6 +7,8 @@ interface KpiCardProps {
   icon?: string;
   color?: string;
   badge?: string;
+  onClick?: () => void;
+  clickHint?: string;
 }
 
 export const KpiCard: React.FC<KpiCardProps> = ({
@@ -16,20 +18,40 @@ export const KpiCard: React.FC<KpiCardProps> = ({
   icon,
   color = 'var(--accent-blue)',
   badge,
+  onClick,
+  clickHint,
 }) => {
   return (
-    <div style={{
-      backgroundColor: 'var(--bg-secondary)',
-      border: '1px solid var(--border-color)',
-      borderRadius: '12px',
-      padding: '1.25rem',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '0.5rem',
-      position: 'relative',
-      overflow: 'hidden',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-    }}>
+    <div
+      onClick={onClick}
+      title={clickHint || (onClick ? `Filtrar trazas por ${title}` : undefined)}
+      style={{
+        backgroundColor: 'var(--bg-secondary)',
+        border: '1px solid var(--border-color)',
+        borderRadius: '12px',
+        padding: '1.25rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.5rem',
+        position: 'relative',
+        overflow: 'hidden',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'transform 0.15s ease, border-color 0.15s ease',
+      }}
+      onMouseEnter={(e) => {
+        if (onClick) {
+          e.currentTarget.style.borderColor = color;
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (onClick) {
+          e.currentTarget.style.borderColor = 'var(--border-color)';
+          e.currentTarget.style.transform = 'none';
+        }
+      }}
+    >
       <div style={{
         position: 'absolute',
         top: 0,
