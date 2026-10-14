@@ -48,4 +48,13 @@ public interface InteractionTraceRepository extends JpaRepository<InteractionTra
 
     @Query("SELECT COALESCE(AVG(t.latencyMs), 0.0) FROM InteractionTrace t WHERE (:iterationId IS NULL OR t.iteration.id = :iterationId)")
     double avgLatencyMs(@Param("iterationId") String iterationId);
+
+    @Query("SELECT t FROM InteractionTrace t WHERE (:iterationId IS NULL OR t.iteration.id = :iterationId) ORDER BY t.startedAt ASC")
+    List<InteractionTrace> findTracesForTimeSeries(@Param("iterationId") String iterationId);
+
+    @Query("SELECT t FROM InteractionTrace t WHERE t.startedAt >= :since ORDER BY t.startedAt ASC")
+    List<InteractionTrace> findTracesForTimeSeriesSince(@Param("since") Instant since);
+
+    @Query("SELECT t FROM InteractionTrace t WHERE t.iteration.id = :iterationId AND t.startedAt >= :since ORDER BY t.startedAt ASC")
+    List<InteractionTrace> findTracesForTimeSeriesByIterationAndSince(@Param("iterationId") String iterationId, @Param("since") Instant since);
 }

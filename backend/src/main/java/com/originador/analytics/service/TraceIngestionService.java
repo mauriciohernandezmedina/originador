@@ -39,6 +39,9 @@ public class TraceIngestionService {
 
     @Transactional
     public TraceResponse ingestTrace(TraceIngestRequest request) {
+        if (request.getStartedAt() != null && request.getEndedAt() != null && request.getEndedAt().isBefore(request.getStartedAt())) {
+            throw new IllegalArgumentException("endedAt no puede ser anterior a startedAt");
+        }
         IterationRun iteration = resolveOrCreateIteration(request.getIterationId());
 
         // Check idempotency if clientTraceId is present
@@ -112,6 +115,21 @@ public class TraceIngestionService {
             Long maxLatency,
             int page,
             int size) {
+        return getTraces(iterationId, modelName, status, minLatency, maxLatency, null, null, null, page, size);
+    }
+
+    @Transactional(readOnly = true)
+    public PaginatedTracesResponse getTraces(
+            String iterationId,
+            String modelName,
+            String status,
+            Long minLatency,
+            Long maxLatency,
+            Instant startDate,
+            Instant endDate,
+            Boolean hasTools,
+            int page,
+            int size) {
 
         int validPage = Math.max(0, page);
         int validSize = Math.min(100, Math.max(1, size));
@@ -134,6 +152,19 @@ public class TraceIngestionService {
             }
             if (maxLatency != null) {
                 predicates.add(cb.lessThanOrEqualTo(root.get("latencyMs"), maxLatency));
+            }
+            if (startDate != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), startDate));
+            }
+            if (endDate != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), endDate));
+            }
+            if (hasTools != null) {
+                if (Boolean.TRUE.equals(hasTools)) {
+                    predicates.add(cb.isNotEmpty(root.get("tools")));
+                } else {
+                    predicates.add(cb.isEmpty(root.get("tools")));
+                }
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

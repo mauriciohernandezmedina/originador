@@ -6,8 +6,13 @@ import LoadingSkeleton from '../components/common/LoadingSkeleton';
 import LatencyTimelineChart from '../components/charts/LatencyTimelineChart';
 import TokenDistributionChart from '../components/charts/TokenDistributionChart';
 import ToolBreakdownChart from '../components/charts/ToolBreakdownChart';
+import ThroughputTimelineChart from '../components/charts/ThroughputTimelineChart';
 
-export const DashboardPage: React.FC = () => {
+interface DashboardPageProps {
+  onNavigateToTraces?: (filters: { minLatency?: number; status?: string }) => void;
+}
+
+export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigateToTraces }) => {
   const [summary, setSummary] = useState<PerformanceSummaryDto | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -165,6 +170,8 @@ export const DashboardPage: React.FC = () => {
               badge={`p95: ${summary.latencyMetrics.p95Ms} ms`}
               icon="⏱️"
               color="var(--accent-blue)"
+              onClick={() => onNavigateToTraces?.({ minLatency: summary.latencyMetrics.p95Ms })}
+              clickHint="Clic para filtrar outliers (≥ p95)"
             />
             <KpiCard
               title="Throughput Medio"
@@ -187,21 +194,35 @@ export const DashboardPage: React.FC = () => {
               subtitle={summary.errorCount === 0 ? 'Cero fallos detectados' : `${summary.errorCount} ejecuciones con error`}
               icon="⚠️"
               color={summary.errorRatePercentage > 5 ? 'var(--accent-red)' : 'var(--accent-blue)'}
+              onClick={summary.errorCount > 0 ? () => onNavigateToTraces?.({ status: 'ERROR' }) : undefined}
+              clickHint={summary.errorCount > 0 ? "Clic para ver ejecuciones fallidas" : undefined}
             />
           </div>
 
-          {/* Charts Row 1: Latency & Tokens */}
+          {/* Charts Row 1: Latency Timeline & Processing Speed Timeline */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))',
             gap: '1.5rem',
           }}>
-            <LatencyTimelineChart metrics={summary.latencyMetrics} />
-            <TokenDistributionChart metrics={summary.tokenMetrics} />
+            <LatencyTimelineChart
+              metrics={summary.latencyMetrics}
+              timeSeries={summary.timeSeries}
+              onOutlierClick={(p95) => onNavigateToTraces?.({ minLatency: p95 })}
+            />
+            <ThroughputTimelineChart
+              timeSeries={summary.timeSeries}
+              avgTokensPerSecond={summary.tokenMetrics.avgTokensPerSecond}
+            />
           </div>
 
-          {/* Charts Row 2: Tool Breakdown */}
-          <div>
+          {/* Charts Row 2: Token Distribution & Tool Breakdown */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))',
+            gap: '1.5rem',
+          }}>
+            <TokenDistributionChart metrics={summary.tokenMetrics} />
             <ToolBreakdownChart toolUsage={summary.toolUsage} />
           </div>
         </>

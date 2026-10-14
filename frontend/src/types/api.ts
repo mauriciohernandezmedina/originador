@@ -100,6 +100,16 @@ export interface ToolUsageStat {
   totalDurationMs: number;
 }
 
+export interface TimeSeriesPointDto {
+  traceId: string;
+  timestamp: string;
+  latencyMs: number;
+  tokensPerSecond: number;
+  totalTokens: number;
+  modelName: string;
+  status: InteractionStatus | string;
+}
+
 export interface PerformanceSummaryDto {
   iterationId?: string | null;
   totalInteractions: number;
@@ -109,6 +119,7 @@ export interface PerformanceSummaryDto {
   latencyMetrics: LatencyMetrics;
   tokenMetrics: TokenMetrics;
   toolUsage: ToolUsageStat[];
+  timeSeries?: TimeSeriesPointDto[];
 }
 
 export interface IterationComparisonDto {

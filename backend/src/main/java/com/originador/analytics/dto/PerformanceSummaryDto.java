@@ -30,4 +30,7 @@ public class PerformanceSummaryDto {
 
     @Builder.Default
     private List<ToolUsageStat> toolUsage = new ArrayList<>();
+
+    @Builder.Default
+    private List<TimeSeriesPointDto> timeSeries = new ArrayList<>();
 }

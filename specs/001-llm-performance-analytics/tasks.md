@@ -193,3 +193,15 @@ graph TD
 3. Incorporar **Fase 6: User Story 4** para inspección detallada de trazas y cascada de herramientas.
 4. Incorporar **Fase 7: User Story 5** para activar el modo de demostración con un solo clic.
 5. Ejecutar **Fase 8: Polish & E2E** para validar la plataforma de extremo a extremo.
+
+---
+
+## Phase 9: Convergence
+
+- [X] T046 [CRITICAL] Create and checkout dedicated branch `feature/001-llm-performance-analytics` to isolate development from main per Constitution VI (contradicts)
+- [X] T047 Add chronological time-series data points (latency and throughput over time) to metrics API and render interactive time-series charts in `DashboardPage.tsx` per FR-007 (partial)
+- [X] T048 Implement one-click navigation from dashboard latency outliers (p95) and error badges to filtered list in `TracesPage.tsx` per SC-005 (missing)
+- [X] T049 Add date range (`startDate`, `endDate`) and tool presence (`hasTools`) query filters in `TraceIngestionService` and `TraceTable.tsx` per FR-008 (partial)
+- [X] T050 Add chronological validation in `TraceIngestRequest` to reject `endedAt` prior to `startedAt` with HTTP 400 Bad Request per US1/AC2, FR-013 (partial)
+- [X] T051 Configure Vitest and React Testing Library in `frontend/package.json` with unit tests for UI utilities and components per Constitution II, plan.md (missing)
+
