@@ -1,20 +1,29 @@
 package com.originador.analytics.config;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.boot.autoconfigure.web.servlet.error.ErrorViewResolver;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.servlet.ModelAndView;
 
-@Controller
-public class SpaForwardingController {
+import java.util.Map;
 
-    /**
-     * Forwards any client-side routes (e.g. /iterations, /traces, /compare) that do not contain a dot
-     * (i.e., not a static file like .js, .css, .ico) and do not match /api/** to index.html for React Router.
-     */
-    @GetMapping(value = {
-        "/{path:[^\\.]*}",
-        "/**/{path:[^\\.]*}"
-    })
-    public String forwardSpaRoutes() {
-        return "forward:/index.html";
+/**
+ * Resolves 404s for client-side SPA routes (e.g. /iterations, /traces, /compare)
+ * by forwarding them to index.html for React Router.
+ */
+@Configuration
+public class SpaForwardingController implements ErrorViewResolver {
+
+    @Override
+    public ModelAndView resolveErrorView(HttpServletRequest request, HttpStatus status, Map<String, Object> model) {
+        if (status == HttpStatus.NOT_FOUND) {
+            String uri = request.getRequestURI();
+            if (!uri.startsWith("/api") && !uri.startsWith("/actuator") && !uri.contains(".")) {
+                return new ModelAndView("forward:/index.html");
+            }
+        }
+        return null;
     }
 }
+
