@@ -1,15 +1,11 @@
 <!--
 Sync Impact Report
-- Version change: Unversioned Template -> v1.0.0
+- Version change: v1.0.0 -> v1.1.0
 - List of modified principles:
-  - [PRINCIPLE_1_NAME] -> I. Calidad de Código y Mantenibilidad Estricta
-  - [PRINCIPLE_2_NAME] -> II. Estándares de Prueba Rigurosos y Enfoque Test-First
-  - [PRINCIPLE_3_NAME] -> III. Consistencia y Accesibilidad en la Experiencia de Usuario (UX)
-  - [PRINCIPLE_4_NAME] -> IV. Rendimiento Predecible, Eficiencia y Resiliencia
-  - [PRINCIPLE_5_NAME] -> V. Simplicidad Arquitectónica y Desacoplamiento Modular
+  - Added: VI. Aislamiento de Funcionalidades y Estrategia de Ramas (Branching Obligatorio)
 - Added sections:
-  - Criterios para Decisiones Técnicas y Opciones de Implementación
-  - Flujo de Desarrollo y Puertas de Calidad (Quality Gates)
+  - Flujo de Desarrollo y Puertas de Calidad: 0. Aislamiento Previo de Rama (Branch Gate)
+  - Reglas operativas para Agentes de Automatización/IA en control de versiones
 - Removed sections: None
 - Follow-up TODOs: None
 -->
@@ -67,13 +63,25 @@ El sistema DEBE diseñarse priorizando la menor complejidad necesaria para satis
 
 *Justificación*: El software simple es más económico de mantener, más fácil de probar, presenta una menor superficie de ataque y permite pivotar ante cambios de requerimientos.
 
+### VI. Aislamiento de Funcionalidades y Estrategia de Ramas (Branching Obligatorio)
+Queda ESTRICTAMENTE PROHIBIDO desarrollar o codificar directamente sobre la rama principal (`main` o `master`), tanto por parte de desarrolladores humanos como de agentes autónomos de IA.
+- Aislamiento Previo al Código: Antes de crear o modificar código fuente, pruebas o configuraciones de una funcionalidad o corrección, se DEBE verificar el estado del repositorio Git y crear o situarse en una rama de trabajo dedicada.
+- Convención de Nomenclatura de Ramas:
+  - Nuevas funcionalidades o features: `feature/<id-feature>-<slug>` (ejemplo: `feature/001-llm-analytics`)
+  - Corrección de anomalías o bugs: `fix/<id-bug>-<slug>`
+  - Refactorizaciones o tareas de mantenimiento: `refactor/<slug>` o `chore/<slug>`
+- Deber Operativo de los Agentes de IA: Al recibir cualquier instrucción de implementación (incluyendo comandos como `/speckit-implement`), el agente DEBE ejecutar como paso preliminar la verificación de la rama activa (`git branch --show-current`). Si se encuentra en `main` o `master`, DEBE crear y cambiarse a la rama `feature/<feature-name>` correspondiente antes de aplicar cualquier cambio en archivos de código.
+- Integración Regulada: La integración a la rama principal solo podrá realizarse mediante Pull Request o Merge Request tras superar satisfactoriamente las compuertas de calidad automatizadas.
+
+*Justificación*: El aislamiento riguroso en ramas garantiza que la rama principal permanezca en un estado siempre desplegable y estable, previene la contaminación de código en progreso y permite abortar o refinar cambios sin afectar el tronco de desarrollo.
+
 ## Criterios para Decisiones Técnicas y Opciones de Implementación
 
 Toda decisión arquitectónica o elección tecnológica en Originador DEBE fundamentarse y alinearse con los principios constitucionales mediante los siguientes mecanismos:
 
 1. Registros de Decisión Arquitectónica (ADR):
    - Cualquier cambio estructural, adición de nuevas tecnologías, selección de bibliotecas críticas o cambio de paradigmas DEBE formalizarse mediante un documento ADR (Architecture Decision Record).
-   - El ADR DEBE evaluar explícitamente el impacto sobre los cuatro ejes fundamentales: calidad de código, impacto en pruebas, experiencia de usuario y rendimiento.
+   - El ADR DEBE evaluar explícitamente el impacto sobre los ejes fundamentales: calidad de código, pruebas, experiencia de usuario, rendimiento y aislamiento modular.
 
 2. Marco de Evaluación de Alternativas Técnicas:
    - Ante múltiples opciones de implementación, DEBE priorizarse aquella alternativa que ofrezca mayor simplicidad de mantenimiento y menor latencia, siempre que cumpla con las restricciones de negocio.
@@ -86,6 +94,10 @@ Toda decisión arquitectónica o elección tecnológica en Originador DEBE funda
 
 Para asegurar el cumplimiento de esta constitución, el ciclo de vida del desarrollo DEBE implementar las siguientes compuertas obligatorias:
 
+0. Aislamiento Previo de Rama (Branch Gate):
+   - Verificación estricta de que el espacio de trabajo no esté en `main` o `master`.
+   - Creación y verificación de rama dedicada `feature/...` o `fix/...` antes de editar código.
+
 1. Verificación en Integración Continua (CI):
    - Compilación exitosa sin advertencias.
    - Ejecución del 100% de linters y validaciones de formato de código.
@@ -93,8 +105,8 @@ Para asegurar el cumplimiento de esta constitución, el ciclo de vida del desarr
    - Umbral mínimo de cobertura de código verificado automáticamente.
 
 2. Revisión de Código por Pares (Peer Review):
-   - Todo cambio a la rama principal DEBE ser revisado y aprobado por al menos un revisor calificado.
-   - El revisor DEBE verificar no solo la corrección sintáctica, sino la adhesión a los principios de experiencia de usuario, diseño modular, manejo de errores y rendimiento.
+   - Todo cambio a la rama principal DEBE ser revisado y aprobado por al menos un revisor calificado mediante Pull Request.
+   - El revisor DEBE verificar no solo la corrección sintáctica, sino la adhesión a los principios de experiencia de usuario, diseño modular, manejo de errores, rendimiento y branching.
 
 3. Monitoreo y Observabilidad en Producción:
    - Toda funcionalidad desplegada DEBE contar con registros estructurados (logs) e instrumentación de métricas clave de salud y rendimiento (latencias, tasas de error, uso de CPU y memoria).
@@ -104,7 +116,8 @@ Para asegurar el cumplimiento de esta constitución, el ciclo de vida del desarr
 Esta Constitución representa el marco normativo supremo de ingeniería y diseño para el proyecto Originador. Tiene precedencia sobre preferencias individuales, estilos personales de programación o presiones coyunturales que comprometan la integridad del producto.
 
 1. Cumplimiento Obligatorio:
-   - Todo colaborador, líder técnico, desarrollador o agente de automatización que contribuya a este repositorio DEBE acatar los principios y reglas aquí establecidos.
+   - Todo colaborador, líder técnico, desarrollador o agente de automatización / IA que contribuya a este repositorio DEBE acatar los principios y reglas aquí establecidos.
+   - Los agentes de codificación autónoma DEBEN leer esta Constitución y verificar explícitamente el cumplimiento de las compuertas de calidad y la creación de rama antes de emitir cambios de código.
    - El incumplimiento sistemático o no justificado de estas normas invalidará la aprobación de pull requests o despliegues.
 
 2. Procedimiento de Enmienda:
@@ -119,4 +132,5 @@ Esta Constitución representa el marco normativo supremo de ingeniería y diseñ
 4. Revisiones de Cumplimiento Periódicas:
    - En cada ciclo de retrospectiva o hito de versión mayor, el equipo DEBE auditar la alineación entre la base de código real y las directrices de esta Constitución para identificar desviaciones y actualizar estándares si la evolución técnica lo demanda.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-14
+**Version**: 1.1.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-14
+
